@@ -9,16 +9,23 @@
 #include <string.h>
 #include <unistd.h>
 using namespace std;
-
+/*
+*Global variables used in the diferent threds 
+*include the mutex variables and the conditionals
+*/
 int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
 char buffer[] = ""; 
-
+/*
+*Function used to write the txt with the un-encripted message 
+*/
 void *WriteResult(void *threadID){
+	//locks semaf
 	pthread_mutex_lock(& semaf);
 	if (isfree == true){
+		// waits until another thread sends the signal that the buffer is full and semaf is ready
 		pthread_cond_wait(& lleno, &semaf);
 	}
 	char character;
@@ -32,19 +39,25 @@ void *WriteResult(void *threadID){
   }
   write<<character;
   isfree = true;
+  // sends signal that the buffer is empty and unlucks semaf
 	pthread_cond_broadcast(& vacio); 
  	pthread_mutex_unlock(& semaf);   
 }
-
+/*
+*This function is used by a thread to decode the string into the original string 
+*/
 void *code(void *threadID){
+	// locks semaf
 	pthread_mutex_lock (& semaf);  
 	long ID;
 	ID = long(threadID);
 	if (isfree == false){
+		// waits for another thread to send the signal that the buffer is empty and semaf is ready
   		pthread_cond_wait(& vacio, &semaf); 
 	}
 	int res = int(ID);
 	int i;
+	//this for is responsable of doing the correct math operation depending on the character that is passed
   for(i=0; i<16; i++){
   	if(i%4==0){
   		res = res - i;
@@ -59,15 +72,18 @@ void *code(void *threadID){
   		res = res + i;
   	}
   } 
+  //fills the position i of the buffer with the resently decoded character
   buffer[in] = char(res);
   in = (in+1);
   isfree = false;
+  //sends the signal that the buffer is filled and unlucks semaf
   pthread_cond_broadcast(& lleno); 
 	pthread_mutex_unlock(& semaf); 
 }
 
 int main(int argc, char const *argv[])
 {
+  //Instantiation of the variables needed for the thread and other processes
   ofstream infile;
   infile.open("un-encrypted.txt");
   infile.clear();
