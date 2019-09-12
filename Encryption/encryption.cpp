@@ -112,8 +112,77 @@ string xor_(string firstBinString, string secondBinString){
 	} 
 	return ans;
 } 
-// encrypt method
-// params
-// pt: the string of the plain text
-// rkb: vector of the roundKeys in binary
-// rk: vector of the rounKeys in hex
+int main(){ 
+	string plainText, key; 
+
+	/*cout<<"Ingrese una texto de 16 caracteres (en hexadecimal): "; 
+	cin>>plainText; 
+	cout<<"Ingrese una llave inicial de 16 caracteres (en hexadecimal): "; 
+	cin>>key;*/
+	
+	plainText= "123456ABCD132536"; 
+	key= "AABB09182736CCDD"; 
+
+
+	// key must be in binary	
+	// apply hexToBin to the Hex key 
+	key= hexToBin(key); 
+	
+	// table 0 - table without the 8i-th bit 
+	int parityBitDropTable[56]= 
+	{ 57,49,41,33,25,17,9, 
+		1,58,50,42,34,26,18, 
+		10,2,59,51,43,35,27, 
+		19,11,3,60,52,44,36,		 
+		63,55,47,39,31,23,15, 
+		7,62,54,46,38,30,22, 
+		14,6,61,53,45,37,29, 
+		21,13,5,28,20,12,4 
+	}; 
+	
+	// getting 56 bit key from 64 bit without the parity bits 
+	key= permute(key, parityBitDropTable, 56); // new key without parity 
+	
+	// table 1- number of shifts per round table 
+	int shift_table[16]= 
+	{ 1, 1, 2, 2, 
+		2, 2, 2, 2, 
+		1, 2, 2, 2, 
+		2, 2, 2, 1 
+	}; 
+	
+	// key compression table
+	int keyCompressionTable[48]= 
+	{ 14,17,11,24,1,5, 
+		3,28,15,6,21,10, 
+		23,19,12,4,26,8, 
+		16,7,27,20,13,2, 
+		41,52,31,37,47,55, 
+		30,40,51,45,33,48, 
+		44,49,39,56,34,53, 
+		46,42,50,36,29,32 
+	}; 
+	
+	// split the 56 bit key into to halves
+	string left= key.substr(0, 28); 
+	string right= key.substr(28, 28); 
+	
+	vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary 
+	vector<string> roundKeysHex;//roundKeysHex for RoundKeys in hexadecimal 
+
+	for(int i=0; i<16; i++){ 
+		// shift the halves according to table 1
+		left= shift_left(left, shift_table[i]); 
+		right= shift_left(right, shift_table[i]); 
+		
+		// combine halves to get a 56 bit string
+		string combine= left + right; 
+		
+		// key compression to 48 bits
+		string RoundKey= permute(combine, keyCompressionTable, 48); 
+		
+        // push the key to the last position of both vectors
+		roundKeysBin.push_back(RoundKey); 
+		roundKeysHex.push_back(binToHex(RoundKey)); 
+	}
+} 
