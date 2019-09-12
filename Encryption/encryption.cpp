@@ -356,4 +356,13 @@ int main(){
 		roundKeysBin.push_back(RoundKey); 
 		roundKeysHex.push_back(binToHex(RoundKey)); 
 	}
+    cout<<"\nEncryption:\n\n"; 
+	string cipher= encrypt(plainText, roundKeysBin, roundKeysHex); 
+	cout<<"\nCipher Text: "<<cipher<<endl; 
+	
+	cout<<"\nDecryption\n\n"; 
+	reverse(roundKeysBin.begin(), roundKeysBin.end()); 
+	reverse(roundKeysHex.begin(), roundKeysHex.end()); 
+	string text= encrypt(cipher, roundKeysBin, roundKeysHex); 
+	cout<<"\nPlain Text: "<<text<<endl;
 } 
