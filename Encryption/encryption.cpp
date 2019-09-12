@@ -116,8 +116,7 @@ string xor_(string firstBinString, string secondBinString){
 // params
 // plainText: the string of the plain text
 // roundKeysBin: vector of the roundKeys in binary
-// roundKeysHex: vector of the rounKeys in hex
-string encrypt(string plainText, vector<string> roundKeysBin, vector<string> roundKeysHex){ 
+string encrypt(string plainText, vector<string> roundKeysBin){ 
 	// convert 16 hexadecimal characters to 64 bit string
 	plainText= hexToBin(plainText); 
 	
@@ -257,8 +256,7 @@ string encrypt(string plainText, vector<string> roundKeysBin, vector<string> rou
 			// right has the i-th 32 bit transformed side 
 			swap(left, right); 
 		} 
-		cout<<"Round "<<i+1<<" "<<binToHex(left)<<" "
-							<<binToHex(right)<<" "<<roundKeysHex[i]<<endl; 
+		cout<<"Round "<<i+1<<" "<<binToHex(left)<<" "<<binToHex(right)<<endl; 
 	} 
 	
 	// combine both halves 
@@ -338,8 +336,7 @@ int main(){
 	string left= key.substr(0, 28); 
 	string right= key.substr(28, 28); 
 	
-	vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary 
-	vector<string> roundKeysHex;//roundKeysHex for RoundKeys in hexadecimal 
+	vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary
 
 	for(int i=0; i<16; i++){ 
 		// shift the halves according to table 1
@@ -354,15 +351,13 @@ int main(){
 		
         // push the key to the last position of both vectors
 		roundKeysBin.push_back(RoundKey); 
-		roundKeysHex.push_back(binToHex(RoundKey)); 
 	}
     cout<<"\nEncryption:\n\n"; 
-	string cipher= encrypt(plainText, roundKeysBin, roundKeysHex); 
+	string cipher= encrypt(plainText, roundKeysBin); 
 	cout<<"\nCipher Text: "<<cipher<<endl; 
 	
 	cout<<"\nDecryption\n\n"; 
 	reverse(roundKeysBin.begin(), roundKeysBin.end()); 
-	reverse(roundKeysHex.begin(), roundKeysHex.end()); 
-	string text= encrypt(cipher, roundKeysBin, roundKeysHex); 
+	string text= encrypt(cipher, roundKeysBin); 
 	cout<<"\nPlain Text: "<<text<<endl;
 } 
