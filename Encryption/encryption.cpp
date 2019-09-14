@@ -1,12 +1,13 @@
 #include<bits/stdc++.h> 
 using namespace std; 
 
-// converts hexadecimal to binary
-// @params
-// hexString: hexadecimal format string of length 16
-// return: binary format string of length 64
+// convierte de hexadecimal a binario
+// @parametros
+// hexString: string en formato hexadecimal con tamaño 16
+// return: string con formato binario de tamaño 64
 string hexToBin(string hexString){ 
-	unordered_map<char, string> mp; 
+	unordered_map<char, string> mp;
+	//Equivalencias de cada caracter de HEX a BIN
 	mp['0']= "0000"; 
 	mp['1']= "0001"; 
 	mp['2']= "0010"; 
@@ -25,18 +26,20 @@ string hexToBin(string hexString){
 	mp['F']= "1111"; 
 	string binString=""; 
 	for(int i=0; i<hexString.size(); i++){ 
+		//Concatenacion de los caracteres transformados segun equivalencias
 		binString+= mp[hexString[i]]; 
 	} 
 	return binString;  
-	// returns the string in binary, as a string
+	// devuelve el string en binario en formato string
 } 
 
-// converts binary to hexadecimal format
-// @params
-// binString: binary format string of length 64
-// return: hexadecimal format string of length 16
+// convierte del formato binario a hexadecimal 
+// @parametros
+// binString: string en formato binario de tamaño 64
+// return: string en formato hexadecimal format de tamaño 16
 string binToHex(string binString){ 
 	unordered_map<string, string> mp; 
+	//Equivalencias de cada caracter de BIN a HEX
 	mp["0000"]= "0"; 
 	mp["0001"]= "1"; 
 	mp["0010"]= "2"; 
@@ -54,23 +57,27 @@ string binToHex(string binString){
 	mp["1110"]= "E"; 
 	mp["1111"]= "F"; 
 	string hex=""; 
-	for(int i=0; i<binString.length(); i+=4){ 
+	for(int i=0; i<binString.length(); i+=4){
+		//Se recorre el string en formato binario en bloque de 4 caracteres
+		//para buscar el bloque en las equivalencias
 		string ch=""; 
 		ch+= binString[i]; 
 		ch+= binString[i+1]; 
 		ch+= binString[i+2]; 
 		ch+= binString[i+3]; 
+		//Concatenacion de los caracteres transformados segun equivalencias
 		hex+= mp[ch]; 
 	} 
-	return hex; 
+	return hex;
+	// devuelve el string en hexadecimal en formato string 
 } 
 
-// permutes a (binary format) string with a given array
-// @params
-// k: the binary string to permute
-// arr: array to permute
-// n: number of times to permute
-// return: the permuted string in binary format
+// permutacion de un (formato binario) string con un arreglo dado
+// @parametros
+// k: el string binario a permutar
+// arr: arreglo a permutar
+// n: veces a permutar
+// return: String en formato binario permutado
 string permute(string k, int* arr, int n){ 
 	string per=""; 
 	for(int i=0; i<n ; i++){ 
@@ -79,11 +86,11 @@ string permute(string k, int* arr, int n){
 	return per; 
 } 
 
-// shifts left a string a given number of times
-// @params
-// key: binary string key to shift left
-// shifts: number of times to shift
-// return: shifted string
+// corre a la izquierda un string un numero de veces determiando
+// @parametros
+// key: String en binario que se correra a la izquierda
+// shifts: numero de veces que se correra
+// return: string corrido
 string shift_left(string key, int shifts){ 
 	string s=""; 
 	for(int i=0; i<shifts; i++){ 
@@ -112,15 +119,15 @@ string xor_(string firstBinString, string secondBinString){
 	} 
 	return ans;
 } 
-// encrypt method
-// params
-// plainText: the string of the plain text
-// roundKeysBin: vector of the roundKeys in binary
+// 	METODO DE ENCRIPTACION
+// parametros
+// plainText: el string del texto vacio
+// roundKeysBin: vector de los roundKeys en binario
 string encrypt(string plainText, vector<string> roundKeysBin){ 
-	// convert 16 hexadecimal characters to 64 bit string
+	// convertir 16 hexadecimal caracteres a string de 64 bits
 	plainText= hexToBin(plainText); 
 	
-	// table 2 - Initial Permutation Table 
+	// tabla 2 - Tabla Inicial de Permutacion
 	int initial_perm[64]= 
 	{ 58,50,42,34,26,18,10,2, 
 		60,52,44,36,28,20,12,4, 
@@ -131,9 +138,9 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 		61,53,45,37,29,21,13,5, 
 		63,55,47,39,31,23,15,7 
 	}; 
-	// execute initial permutation
+	// ejecutar la permutacion inicial
 	plainText= permute(plainText, initial_perm, 64); 
-	cout<<"String in HEX After initial permutation: "<<binToHex(plainText)<<endl; 
+	cout<<"String en HEX Despues de Permutacion Inicial: "<<binToHex(plainText)<<endl; 
 	
 	// split the 64 bit permuted string in two halves
 	string left= plainText.substr(0, 32); 
