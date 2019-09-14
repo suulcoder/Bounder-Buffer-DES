@@ -147,7 +147,7 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 	string right= plainText.substr(32, 32); 
 	cout<<"After splitting: L0="<<binToHex(left) <<" R0="<<binToHex(right)<<endl; 
 	
-	// table 3 - expansion D-box table  or expansion permutation
+	// tabla 3 - expansion D-box tabla  o expansion permutacion
 	int exp_d[48]= 
 	{ 32,1,2,3,4,5,4,5, 
 		6,7,8,9,8,9,10,11, 
@@ -157,7 +157,7 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 		28,29,28,29,30,31,32,1 
 	}; 
 	
-	// table 4 - S-box table 
+	// tabla 4 - tabla S-box  
 	int sBox[8][4][16]= 
 	{{ 
 		14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7, 
@@ -208,7 +208,7 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 		2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11 
 	}}; 
 	
-	//table 4 - straight permutation table 
+	//tabla 4 - straight permutation table 
 	int straightPermutationTable[32]= 
 	{ 16,7,20,21, 
 		29,12,28,17, 
@@ -221,14 +221,16 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 	}; 
 	
 	cout<<endl; 
-    // starts the process of the 16 rounds
+	// comienza el proceso de 16 rondas
 	for(int i=0; i<16; i++){ 
 		//Expansion D-box
-		// expands the right 32bit string to a 48 bit string 
+		/* expand the right 32bit string to a 48 bit string 
+		//Expande el bite derecho de 32bits a un string de 48 bits
+		*/
 		string right_expanded= permute(right, exp_d, 48); 
 		
-		// XOR RoundKey[i] and right_expanded  (48 bits both)
-        // this is just used to control the process of the s-boxes
+		// XOR RoundKey[i] y right_expanded  (48 bits c/u)
+        // se usa para controlar el proceso de s-boxes
 		string x= xor_(roundKeysBin[i], right_expanded); 
 		
 		//S-boxes 
@@ -266,10 +268,10 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 		cout<<"Round "<<i+1<<" "<<binToHex(left)<<" "<<binToHex(right)<<endl; 
 	} 
 	
-	// combine both halves 
+	// combine las dos mitades
 	string combine= left+right; 
 	
-	// table 5 - final permutation table 
+	// tabla 5 - tabla de permutacion final 
 	int finalPermutationTable[64]= 
 	{ 40,8,48,16,56,24,64,32, 
 		39,7,47,15,55,23,63,31, 
@@ -281,11 +283,12 @@ string encrypt(string plainText, vector<string> roundKeysBin){
 		33,1,41,9,49,17,57,25 
 	}; 
 	
-	// apply final permutation 
+	// aplicacion de la ultima permutacion
 	string cipher= binToHex(permute(combine, finalPermutationTable, 64)); 
 	return cipher;
 }
 int main(){ 
+	//Texto a encriptar y clave
 	string plainText, key; 
 
 	/*cout<<"Ingrese una texto de 16 caracteres (en hexadecimal): "; 
@@ -300,11 +303,11 @@ int main(){
 	key= "DDCC63728190BABA"; 
 
 
-	// key must be in binary	
-	// apply hexToBin to the Hex key 
+	// clave debe estar en binaria	
+	// applicar hexToBin a la clave en Hex
 	key= hexToBin(key); 
 	
-	// table 0 - table without the 8i-th bit 
+	// tabla 0 - table without the 8i-th bit 
 	int parityBitDropTable[56]= 
 	{ 57,49,41,33,25,17,9, 
 		1,58,50,42,34,26,18, 
@@ -319,7 +322,7 @@ int main(){
 	// getting 56 bit key from 64 bit without the parity bits 
 	key= permute(key, parityBitDropTable, 56); // new key without parity 
 	
-	// table 1- number of shifts per round table 
+	// tabla 1- number of shifts per round table 
 	int shift_table[16]= 
 	{ 1, 1, 2, 2, 
 		2, 2, 2, 2, 
@@ -346,17 +349,17 @@ int main(){
 	vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary
 
 	for(int i=0; i<16; i++){ 
-		// shift the halves according to table 1
+		// correr las mitades segun la tabla 1 
 		left= shift_left(left, shift_table[i]); 
 		right= shift_left(right, shift_table[i]); 
 		
-		// combine halves to get a 56 bit string
+		// combinar las mitades para obtener un string de 56 bits
 		string combine= left + right; 
 		
-		// key compression to 48 bits
+		// Comprimir la clave a 48 bits
 		string RoundKey= permute(combine, keyCompressionTable, 48); 
 		
-        // push the key to the last position of both vectors
+        // enviar la clave a la ultima posicion de los dos vectores
 		roundKeysBin.push_back(RoundKey); 
 	}
     cout<<"\nEncryption:\n\n"; 
