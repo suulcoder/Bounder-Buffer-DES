@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <string> 
 using namespace std;
 #include<bits/stdc++.h>  
 
@@ -15,7 +16,7 @@ int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
-char buffer[] = ""; 
+string buffer = ""; 
 
 // convierte de hexadecimal a binario
 // @parametros
@@ -358,31 +359,31 @@ char getString(int i){
   if(i==0){
     return '0';
   }
-  else if(if==1){
+  else if(i==1){
     return '1';
   }
-  else if(if==2){
+  else if(i==2){
     return '2';
   }
-  else if(if==3){
+  else if(i==3){
     return '3';
   }
-  else if(if==4){
+  else if(i==4){
     return '4';
   }
-  else if(if==5){
+  else if(i==5){
     return '5';
   }
-  else if(if==6){
+  else if(i==6){
     return '6';
   }
-  else if(if==7){
+  else if(i==7){
     return '7';
   }
-  else if(if==8){
+  else if(i==8){
     return '8';
   }
-  else if(if==9){
+  else if(i==9){
     return '9';
   }
 }
@@ -390,7 +391,7 @@ char getString(int i){
 int main(int argc, char const *argv[])
 {
   //Texto a encriptar y clave
-  string plainText, key; 
+  string plainText, key,str1,str2; 
 
   /*cout<<"Ingrese una texto de 16 caracteres (en hexadecimal): "; 
   cin>>plainText; 
@@ -400,8 +401,6 @@ int main(int argc, char const *argv[])
   // plainText= "123456ABCD132536"; 
   // key= "AABB09182736CCDD"; 
 
-  plainText= "6942069420694206"; 
-  key= "DDCC63728190BABA"; 
 
 
   // clave debe estar en binaria  
@@ -464,15 +463,11 @@ int main(int argc, char const *argv[])
     roundKeysBin.push_back(RoundKey); 
   }
   
-  cout<<"\nEncryption:\n\n"; 
   string cipher= encrypt(plainText, roundKeysBin); 
-  cout<<"\nCipher Text: "<<cipher<<endl; 
   
-  cout<<"\nDecryption\n\n"; 
   reverse(roundKeysBin.begin(), roundKeysBin.end()); 
   string text= encrypt(cipher, roundKeysBin); 
-  cout<<"\nPlain Text: "<<text<<endl;
-
+  
   ofstream infile;
   infile.open("encrypted.txt");
   infile.clear();
@@ -496,42 +491,48 @@ int main(int argc, char const *argv[])
 		cerr<<"Fail to read Test.txt"<<endl;
 		exit(EXIT_FAILURE);
 	}
-	int counter = 0;
-  char[] str = "";
+  buffer = "";
 	while (!read.eof()) {  
     read >> string;
     int x = 0;
     while(string[x] != '\0'){
       int chain = int(string[x]);
-      str = str + getString(chain);
+      stringstream ss;
+      ss << chain;
+      str1 = ss.str();
+      buffer = buffer + str1;
       x++;
     }
+    int chain = int('\0');
+    stringstream ss;
+    ss << chain;
+    str1 = ss.str();
+    buffer = buffer + str1;
   }
-  while (!read.eof()) {  
-    read >> string;
-    str = str + string;
-    int x = 0;
-    while(string[x] != '\0'){
-    	int chain = int(string[x]);
-    	rc = pthread_create(&tid, NULL, code, (void *)chain);//Create a thread for each number
-      rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)counter);//Create a thread for each number
-     	if (rc) {
+  int index = 0;
+  str2 = "";
+  int cont=0;
+  while(buffer[index]!='\0'){
+    str1 = buffer[index];
+    str2 = str2 + str1;
+    index++;
+    if(index%16==0){
+      rc = pthread_create(&tid, NULL, code, (void *)cont);//Create a thread for each number
+      rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)cont);//Create a thread for each number
+      if (rc) {
          printf("ERROR; return code from pthread_create() is %d\n", rc);
          exit(-1);
       }    
-   	// Esperamos a que cada thread termine en orden
+    // Esperamos a que cada thread termine en orden
       rc = pthread_join(tid, NULL);    
       if (rc) {
-    	 	printf("ERROR; return code from pthread_join() is %d\n", rc);
-      	exit(-1);
+        printf("ERROR; return code from pthread_join() is %d\n", rc);
+        exit(-1);
       }
-    	x++;
-    	counter++;
+      str2 = "";
+      cont++;
     }
-    rc = pthread_create(&tid, NULL, code, (void *)int(' '));//Create a thread for each number
-    rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)counter);//Create a thread for each number
-    counter++;
-	}
+  }
   printf("The file is encrypted check encrypted.txt");
 	read.close();
 	exit(0);
