@@ -357,6 +357,7 @@ void *code(void *threadID){
 	}
 	int res = int(ID);
 	string str1 = decimalToHex(res);
+  cout<<endl<<ID<<"/"<<str1<<"|"<<endl;
   //Texto a encriptar y clave
   string plainText, key; 
 
@@ -368,7 +369,7 @@ void *code(void *threadID){
   // plainText= "123456ABCD132536"; 
   // key= "AABB09182736CCDD"; 
 
-    plainText= str1; 
+  plainText= str1; 
   key= "DDCC63728190BABA"; 
 
 
@@ -432,7 +433,8 @@ void *code(void *threadID){
     roundKeysBin.push_back(RoundKey); 
   }  
   string cipher= encrypt(plainText, roundKeysBin);
-  res = hexToDecimal(cipher);
+  cout<<cipher;
+  res = hexToDecimal(cipher.substr(0,2));
   buffer[in] = char(res);
   in = (in+1);
   isfree = false;
@@ -471,8 +473,8 @@ int main(int argc, char const *argv[])
 	    int x = 0;
 	    while(string[x] != '\0'){
 	    	int chain = int(string[x]);
-	    	rc = pthread_create(&tid, NULL, code, (void *)&chain);//Create a thread for each number
-        rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&counter);//Create a thread for each number
+	    	rc = pthread_create(&tid, NULL, code, (void *)chain);//Create a thread for each number
+        rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)counter);//Create a thread for each number
        	if (rc) {
            printf("ERROR; return code from pthread_create() is %d\n", rc);
            exit(-1);
