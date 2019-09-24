@@ -16,7 +16,7 @@ int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
-string buffer = ""; 
+std::string buffer = ""; 
 
 // convierte de hexadecimal a binario
 // @parametros
@@ -136,6 +136,29 @@ string xor_(string firstBinString, string secondBinString){
   } 
   return ans;
 } 
+
+/*Este metodo convierte un int en un numero hexadecimal
+de tipo string*/
+ string decimalToHex(int num){
+   stringstream my_ss;
+   my_ss << hex << num;
+   string res = my_ss.str();
+   if(res.size()==1){
+    return ('0'+res); 
+   }    
+   return res;
+ }
+
+/*Este metodo convierte un numero hexadecimal en formato string
+en un decimal int*/
+int hexToDecimal(string hex_str){
+  unsigned int decimal;
+  stringstream my_ss;
+  my_ss << hex << hex_str;
+  my_ss >> decimal;
+  return decimal;
+}
+
 //  METODO DE ENCRIPTACION
 // parametros
 // plainText: el string del texto vacio
@@ -305,21 +328,33 @@ string encrypt(string plainText, vector<string> roundKeysBin){
   return cipher;
 }
 
+/*Para poder guardar los resultados en el archivo txt*/
 void *WriteResult(void *threadID){
 	pthread_mutex_lock(& semaf);
-	if (isfree == true){
+	long ID;
+  int res = int(ID);
+  ID = long(threadID);
+  if (isfree == true){
 		pthread_cond_wait(& lleno, &semaf);
 	}
-	char character;
-	character = buffer[out];
+	string outString,final;
+  final = "";
+	outString = buffer.substr(res,(res+16));
 	out = (out+1);
-  ofstream write("encrypted.txt",ios::app);
-  if(!write)
-  {
-    cerr<<"Fail to create encrypted.txt"<<endl;
-    exit(EXIT_FAILURE);
+  int i;
+  int charNumber;
+  for(i=0;i<16;i=i+2){                                    //Pasando de hexadecimal a Base64
+    char character;
+    charNumber = hexToDecimal(outString.substr(i,i+2));
+    character = char(charNumber);
+    ofstream write("encrypted.txt",ios::app);
+    if(!write)
+    {
+      cerr<<"Fail to create encrypted.txt"<<endl;
+      exit(EXIT_FAILURE);
+    }
+    write<<character;  
   }
-  write<<character;
   isfree = true;
 	pthread_cond_broadcast(& vacio); 
  	pthread_mutex_unlock(& semaf);   
@@ -334,20 +369,79 @@ void *code(void *threadID){
 	}
 	int res = int(ID);
 	int i;
-  for(i=0; i<16; i++){
-  	if(i%4==0){
-  		res = res + i;
-  	}
-  	else if(i%4==1){
-  		res = res - i;
-  	}
-  	else if(i%4==2){
-  		res = res + i;
-  	}
-  	else{
-  		res = res - i;
-  	}
-  } 
+  //Texto a encriptar y clave
+    string plainText, key,str1,str2; 
+
+    /*cout<<"Ingrese una texto de 16 caracteres (en hexadecimal): "; 
+    cin>>plainText; 
+    cout<<"Ingrese una llave inicial de 16 caracteres (en hexadecimal): "; 
+    cin>>key;*/
+    
+    plainText= buffer.substr(res,(res+16)); 
+    key= "AABB09182736CCDD"; 
+
+    // clave debe estar en binaria  
+    // applicar hexToBin a la clave en Hex
+    key= hexToBin(key); 
+    
+    // tabla 0 - table without the 8i-th bit 
+    int parityBitDropTable[56]= 
+    { 57,49,41,33,25,17,9, 
+      1,58,50,42,34,26,18, 
+      10,2,59,51,43,35,27, 
+      19,11,3,60,52,44,36,     
+      63,55,47,39,31,23,15, 
+      7,62,54,46,38,30,22, 
+      14,6,61,53,45,37,29, 
+      21,13,5,28,20,12,4 
+    }; 
+    
+    // getting 56 bit key from 64 bit without the parity bits 
+    key= permute(key, parityBitDropTable, 56); // new key without parity 
+    
+    // tabla 1- number of shifts per round table 
+    int shift_table[16]= 
+    { 1, 1, 2, 2, 
+      2, 2, 2, 2, 
+      1, 2, 2, 2, 
+      2, 2, 2, 1 
+    }; 
+    
+    // key compression table
+    int keyCompressionTable[48]= 
+    { 14,17,11,24,1,5, 
+      3,28,15,6,21,10, 
+      23,19,12,4,26,8, 
+      16,7,27,20,13,2, 
+      41,52,31,37,47,55, 
+      30,40,51,45,33,48, 
+      44,49,39,56,34,53, 
+      46,42,50,36,29,32 
+    }; 
+    
+    // split the 56 bit key into to halves
+    string left= key.substr(0, 28); 
+    string right= key.substr(28, 28); 
+    
+    vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary
+
+    for(int i=0; i<16; i++){ 
+      // correr las mitades segun la tabla 1 
+      left= shift_left(left, shift_table[i]); 
+      right= shift_left(right, shift_table[i]); 
+      
+      // combinar las mitades para obtener un string de 56 bits
+      string combine= left + right; 
+      
+      // Comprimir la clave a 48 bits
+      string RoundKey= permute(combine, keyCompressionTable, 48); 
+      
+          // enviar la clave a la ultima posicion de los dos vectores
+      roundKeysBin.push_back(RoundKey); 
+    }
+    
+  string cipher= encrypt(plainText, roundKeysBin);
+  buffer.substr(res,(res+16))=cipher;
   buffer[in] = char(res);
   in = (in+1);
   isfree = false;
@@ -355,119 +449,13 @@ void *code(void *threadID){
 	pthread_mutex_unlock(& semaf); 
 }
 
-char getString(int i){
-  if(i==0){
-    return '0';
-  }
-  else if(i==1){
-    return '1';
-  }
-  else if(i==2){
-    return '2';
-  }
-  else if(i==3){
-    return '3';
-  }
-  else if(i==4){
-    return '4';
-  }
-  else if(i==5){
-    return '5';
-  }
-  else if(i==6){
-    return '6';
-  }
-  else if(i==7){
-    return '7';
-  }
-  else if(i==8){
-    return '8';
-  }
-  else if(i==9){
-    return '9';
-  }
-}
-
 int main(int argc, char const *argv[])
 {
-  //Texto a encriptar y clave
-  string plainText, key,str1,str2; 
+//  reverse(roundKeysBin.begin(), roundKeysBin.end()); 
+//  string text= encrypt(cipher, roundKeysBin); 
+  
+  string str1,str2;
 
-  /*cout<<"Ingrese una texto de 16 caracteres (en hexadecimal): "; 
-  cin>>plainText; 
-  cout<<"Ingrese una llave inicial de 16 caracteres (en hexadecimal): "; 
-  cin>>key;*/
-  
-  // plainText= "123456ABCD132536"; 
-  // key= "AABB09182736CCDD"; 
-
-
-
-  // clave debe estar en binaria  
-  // applicar hexToBin a la clave en Hex
-  key= hexToBin(key); 
-  
-  // tabla 0 - table without the 8i-th bit 
-  int parityBitDropTable[56]= 
-  { 57,49,41,33,25,17,9, 
-    1,58,50,42,34,26,18, 
-    10,2,59,51,43,35,27, 
-    19,11,3,60,52,44,36,     
-    63,55,47,39,31,23,15, 
-    7,62,54,46,38,30,22, 
-    14,6,61,53,45,37,29, 
-    21,13,5,28,20,12,4 
-  }; 
-  
-  // getting 56 bit key from 64 bit without the parity bits 
-  key= permute(key, parityBitDropTable, 56); // new key without parity 
-  
-  // tabla 1- number of shifts per round table 
-  int shift_table[16]= 
-  { 1, 1, 2, 2, 
-    2, 2, 2, 2, 
-    1, 2, 2, 2, 
-    2, 2, 2, 1 
-  }; 
-  
-  // key compression table
-  int keyCompressionTable[48]= 
-  { 14,17,11,24,1,5, 
-    3,28,15,6,21,10, 
-    23,19,12,4,26,8, 
-    16,7,27,20,13,2, 
-    41,52,31,37,47,55, 
-    30,40,51,45,33,48, 
-    44,49,39,56,34,53, 
-    46,42,50,36,29,32 
-  }; 
-  
-  // split the 56 bit key into to halves
-  string left= key.substr(0, 28); 
-  string right= key.substr(28, 28); 
-  
-  vector<string> roundKeysBin;//roundKeysBin for RoundKeys in binary
-
-  for(int i=0; i<16; i++){ 
-    // correr las mitades segun la tabla 1 
-    left= shift_left(left, shift_table[i]); 
-    right= shift_left(right, shift_table[i]); 
-    
-    // combinar las mitades para obtener un string de 56 bits
-    string combine= left + right; 
-    
-    // Comprimir la clave a 48 bits
-    string RoundKey= permute(combine, keyCompressionTable, 48); 
-    
-        // enviar la clave a la ultima posicion de los dos vectores
-    roundKeysBin.push_back(RoundKey); 
-  }
-  
-  string cipher= encrypt(plainText, roundKeysBin); 
-  
-  reverse(roundKeysBin.begin(), roundKeysBin.end()); 
-  string text= encrypt(cipher, roundKeysBin); 
-  
   ofstream infile;
   infile.open("encrypted.txt");
   infile.clear();
@@ -481,7 +469,7 @@ int main(int argc, char const *argv[])
   pthread_attr_t attr1;//atribute
   pthread_attr_init(&attr1);
   pthread_attr_setdetachstate(&attr1, PTHREAD_CREATE_JOINABLE);
-	char string[128];	
+	string str;	
   in = out = 0;
 	pthread_mutex_init(&semaf, NULL); 
   pthread_cond_init(&lleno, NULL); 
@@ -493,45 +481,44 @@ int main(int argc, char const *argv[])
 	}
   buffer = "";
 	while (!read.eof()) {  
-    read >> string;
+    read >> str;
     int x = 0;
-    while(string[x] != '\0'){
-      int chain = int(string[x]);
-      stringstream ss;
-      ss << chain;
-      str1 = ss.str();
+    while(str[x] != '\0'){
+      int chain = int(str[x]);
+      str1 = decimalToHex(chain);
       buffer = buffer + str1;
       x++;
     }
-    int chain = int('\0');
-    stringstream ss;
-    ss << chain;
-    str1 = ss.str();
-    buffer = buffer + str1;
+    str1 = "00";
+   buffer += str1;
   }
   int index = 0;
-  str2 = "";
-  int cont=0;
-  while(buffer[index]!='\0'){
-    str1 = buffer[index];
-    str2 = str2 + str1;
-    index++;
-    if(index%16==0){
-      rc = pthread_create(&tid, NULL, code, (void *)cont);//Create a thread for each number
-      rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)cont);//Create a thread for each number
+  while(buffer.size()%16==0){//Si la longitud no es igual a 0
+    buffer += "00";
+  }
+  for(index=0;index<buffer.size();index+=16){
+    cout<<index;
+      rc = pthread_create(&tid, NULL, code, (void *)&index);//Create a thread for each number
+      rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&index);//Create a thread for each number
       if (rc) {
          printf("ERROR; return code from pthread_create() is %d\n", rc);
+         exit(-1);
+      }   
+      if (rc1) {
+         printf("ERROR; return code from pthread_create() is %d\n", rc1);
          exit(-1);
       }    
     // Esperamos a que cada thread termine en orden
       rc = pthread_join(tid, NULL);    
+      rc1 = pthread_join(tid, NULL);    
       if (rc) {
         printf("ERROR; return code from pthread_join() is %d\n", rc);
         exit(-1);
       }
-      str2 = "";
-      cont++;
-    }
+      if (rc1) {
+        printf("ERROR; return code from pthread_join() is %d\n", rc1);
+        exit(-1);
+      }
   }
   printf("The file is encrypted check encrypted.txt");
 	read.close();
