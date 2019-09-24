@@ -15,7 +15,7 @@ int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
-string buffer;
+string buffer = "";
 
 // convierte de hexadecimal a binario
 // @parametros
@@ -480,6 +480,7 @@ int main(int argc, char const *argv[])
 {
 //  reverse(roundKeysBin.begin(), roundKeysBin.end()); 
 //  string text= encrypt(cipher, roundKeysBin); 
+  
   string str1,str2;
   ofstream infile;
   infile.open("encrypted.txt");
