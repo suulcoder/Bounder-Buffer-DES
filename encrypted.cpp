@@ -11,24 +11,11 @@
 using namespace std;
 #include<bits/stdc++.h>  
 
-class Global
-{
-  public: 
-    string buffer;
-    void m_Renderizar(const string *cadena);
-};
-
-/* implementar m_Renderizar() para la c;*/
-void Global::m_Renderizar(const string *cadena){
-    strcpy(buffer, cadena);//copia la cadena
-    return;
-}
-
 int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
-Global global;
+string buffer = "";
 
 // convierte de hexadecimal a binario
 // @parametros
@@ -351,7 +338,7 @@ void *WriteResult(void *threadID){
 	}
 	string outString,final;
   final = "";
-	outString = global.buffer.substr(res,(res+16));
+	outString = buffer.substr(res,(res+16));
   out = (out+1);
   int i;
   int charNumber;
@@ -390,7 +377,7 @@ void *code(void *threadID){
     cout<<"Ingrese una llave inicial de 16 caracteres (en hexadecimal): "; 
     cin>>key;*/
     
-    plainText= global.buffer.substr(res,(res+16)); 
+    plainText= buffer.substr(res,(res+16)); 
     key= "AABB09182736CCDD"; 
 
     // clave debe estar en binaria  
@@ -454,7 +441,7 @@ void *code(void *threadID){
     }
     
   string cipher= encrypt(plainText, roundKeysBin);
-  global.buffer.substr(res,(res+16))=cipher;
+  buffer.substr(res,(res+16))=cipher;
   in = (in+1);
   isfree = false;
   pthread_cond_broadcast(& lleno); 
@@ -484,7 +471,7 @@ void loadbuffer(){
   while(buff.size()%16==0){//Si la longitud no es igual a 0
     buff += "00";
   }
-  global.buffer = buff;
+  buffer = buff;
   int index;
   read.close(); 
 }
@@ -495,7 +482,6 @@ int main(int argc, char const *argv[])
 //  string text= encrypt(cipher, roundKeysBin); 
   
   string str1,str2;
-  global.m_Renderizar("");
   ofstream infile;
   infile.open("encrypted.txt");
   infile.clear();
@@ -515,7 +501,7 @@ int main(int argc, char const *argv[])
  	pthread_cond_init(&vacio, NULL);
 	loadbuffer();
   int index = 0;
-  for(index=0;index<global.buffer.size();index+=16){
+  for(index=0;index<buffer.size();index+=16){
     cout<<index;
       rc = pthread_create(&tid, NULL, code, (void *)&index);//Create a thread for each number
       rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&index);//Create a thread for each number
