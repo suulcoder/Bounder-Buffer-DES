@@ -8,15 +8,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <string> 
 using namespace std;
 #include<bits/stdc++.h>  
+
+class Global
+{
+  public: 
+    string buffer;
+    void m_Renderizar(const string *cadena);
+};
+
+/* implementar m_Renderizar() para la c;*/
+void Global::m_Renderizar(const string *cadena){
+    strcpy(buffer, cadena);//copia la cadena
+    return;
+}
 
 int in, out;
 bool isfree = true; 
 pthread_cond_t lleno, vacio; 
 pthread_mutex_t semaf;
-std::string buffer = ""; 
+Global global;
 
 // convierte de hexadecimal a binario
 // @parametros
@@ -339,8 +351,8 @@ void *WriteResult(void *threadID){
 	}
 	string outString,final;
   final = "";
-	outString = buffer.substr(res,(res+16));
-	out = (out+1);
+	outString = global.buffer.substr(res,(res+16));
+  out = (out+1);
   int i;
   int charNumber;
   for(i=0;i<16;i=i+2){                                    //Pasando de hexadecimal a Base64
@@ -364,6 +376,7 @@ void *code(void *threadID){
 	pthread_mutex_lock (& semaf);  
 	long ID;
 	ID = long(threadID);
+  cout<<ID;
 	if (isfree == false){
   		pthread_cond_wait(& vacio, &semaf); 
 	}
@@ -377,7 +390,7 @@ void *code(void *threadID){
     cout<<"Ingrese una llave inicial de 16 caracteres (en hexadecimal): "; 
     cin>>key;*/
     
-    plainText= buffer.substr(res,(res+16)); 
+    plainText= global.buffer.substr(res,(res+16)); 
     key= "AABB09182736CCDD"; 
 
     // clave debe estar en binaria  
@@ -441,12 +454,39 @@ void *code(void *threadID){
     }
     
   string cipher= encrypt(plainText, roundKeysBin);
-  buffer.substr(res,(res+16))=cipher;
-  buffer[in] = char(res);
+  global.buffer.substr(res,(res+16))=cipher;
   in = (in+1);
   isfree = false;
   pthread_cond_broadcast(& lleno); 
 	pthread_mutex_unlock(& semaf); 
+}
+
+void loadbuffer(){
+  string str1,str;
+  string buff = "";
+  ifstream read("Test.txt",ios::in);
+  if(!read){
+    cerr<<"Fail to read Test.txt"<<endl;
+    exit(EXIT_FAILURE);
+  }
+    while (!read.eof()) {  
+    read >> str;
+    int x = 0;
+    while(str[x] != '\0'){
+      int chain = int(str[x]);
+      str1 = decimalToHex(chain);
+      buff = buff + str1;
+      x++;
+    }
+   str1 = "00";
+   buff += str1;
+  }
+  while(buff.size()%16==0){//Si la longitud no es igual a 0
+    buff += "00";
+  }
+  global.buffer = buff;
+  int index;
+  read.close(); 
 }
 
 int main(int argc, char const *argv[])
@@ -455,7 +495,7 @@ int main(int argc, char const *argv[])
 //  string text= encrypt(cipher, roundKeysBin); 
   
   string str1,str2;
-
+  global.m_Renderizar("");
   ofstream infile;
   infile.open("encrypted.txt");
   infile.clear();
@@ -469,34 +509,13 @@ int main(int argc, char const *argv[])
   pthread_attr_t attr1;//atribute
   pthread_attr_init(&attr1);
   pthread_attr_setdetachstate(&attr1, PTHREAD_CREATE_JOINABLE);
-	string str;	
-  in = out = 0;
+	in = out = 0;
 	pthread_mutex_init(&semaf, NULL); 
   pthread_cond_init(&lleno, NULL); 
  	pthread_cond_init(&vacio, NULL);
-	ifstream read("Test.txt",ios::in);
-	if(!read){
-		cerr<<"Fail to read Test.txt"<<endl;
-		exit(EXIT_FAILURE);
-	}
-  buffer = "";
-	while (!read.eof()) {  
-    read >> str;
-    int x = 0;
-    while(str[x] != '\0'){
-      int chain = int(str[x]);
-      str1 = decimalToHex(chain);
-      buffer = buffer + str1;
-      x++;
-    }
-    str1 = "00";
-   buffer += str1;
-  }
+	loadbuffer();
   int index = 0;
-  while(buffer.size()%16==0){//Si la longitud no es igual a 0
-    buffer += "00";
-  }
-  for(index=0;index<buffer.size();index+=16){
+  for(index=0;index<global.buffer.size();index+=16){
     cout<<index;
       rc = pthread_create(&tid, NULL, code, (void *)&index);//Create a thread for each number
       rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&index);//Create a thread for each number
@@ -521,6 +540,5 @@ int main(int argc, char const *argv[])
       }
   }
   printf("The file is encrypted check encrypted.txt");
-	read.close();
 	exit(0);
 }
