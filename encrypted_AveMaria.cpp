@@ -1,3 +1,14 @@
+/* Universidad del Valle de Guatemala
+* Proyecto 1 - Microprocesadores
+* Saul Contreras 18409
+* Alejandro Urbina 18473
+* Michele Benvenuto 18232
+* Maria Ines Vasquez 18250
+* Camila Gonzalez 18398
+* Este programa utiliza determinada key para lograr
+* encriptar un mensaje utilizando valores hexadecimales,
+* binarios y transformaciones
+*/
 #include <iostream> //cout, cin, cerr
 #include <unistd.h>
 #include <cmath>
