@@ -1,6 +1,29 @@
 #include<bits/stdc++.h> 
 using namespace std; 
 
+
+/*Este metodo convierte un int en un numero hexadecimal
+de tipo string*/
+ string decimalToHex(int num){
+   stringstream my_ss;
+   my_ss << hex << num;
+   string res = my_ss.str();
+   if(res.size()==1){
+    return ('0'+res); 
+   }    
+   return res;
+ }
+
+/*Este metodo convierte un numero hexadecimal en formato string
+en un decimal int*/
+int hexToDecimal(string hex_str){
+  unsigned int decimal;
+  stringstream my_ss;
+  my_ss << hex << hex_str;
+  my_ss >> decimal;
+  return decimal;
+}
+
 // convierte de hexadecimal a binario
 // @parametros
 // hexString: string en formato hexadecimal con tamaño 16
@@ -299,7 +322,9 @@ int main(){
 	// plainText= "123456ABCD132536"; 
 	// key= "AABB09182736CCDD"; 
 
-    plainText= "6942069420694206"; 
+
+    plainText= decimalToHex(int('H'));
+    cout<<plainText; 
 	key= "DDCC63728190BABA"; 
 
 

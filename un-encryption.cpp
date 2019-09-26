@@ -6,8 +6,9 @@
 * Maria Ines Vasquez 18250
 * Camila Gonzalez 18398
 * Este programa utiliza determinada key para lograr
-* encriptar un mensaje utilizando valores hexadecimales,
-* binarios y transformaciones
+* desencriptar el mensaje previamente encriptado 
+* utilizando valores hexadecimales, binarios y 
+* transformaciones
 */
 #include <iostream> //cout, cin, cerr
 #include <unistd.h>
@@ -168,12 +169,10 @@ string encrypt(string plainText, vector<string> roundKeysBin){
   }; 
   // ejecutar la permutacion inicial
   plainText= permute(plainText, initial_perm, 64); 
-  cout<<"String en HEX Despues de Permutacion Inicial: "<<binToHex(plainText)<<endl; 
   
   // split the 64 bit permuted string in two halves
   string left= plainText.substr(0, 32); 
   string right= plainText.substr(32, 32); 
-  cout<<"After splitting: L0="<<binToHex(left) <<" R0="<<binToHex(right)<<endl; 
   
   // tabla 3 - expansion D-box tabla  o expansion permutacion
   int exp_d[48]= 
@@ -248,7 +247,6 @@ string encrypt(string plainText, vector<string> roundKeysBin){
     22,11,4,25 
   }; 
   
-  cout<<endl; 
   // comienza el proceso de 16 rondas
   for(int i=0; i<16; i++){ 
     //Expansion D-box
@@ -293,7 +291,6 @@ string encrypt(string plainText, vector<string> roundKeysBin){
       // right has the i-th 32 bit transformed side 
       swap(left, right); 
     } 
-    cout<<"Round "<<i+1<<" "<<binToHex(left)<<" "<<binToHex(right)<<endl; 
   } 
   
   // combine las dos mitades
@@ -340,14 +337,14 @@ int hexToDecimal(string hex_str){
 
 
 void *WriteResult(void *threadID){
-	pthread_mutex_lock(& semaf);
-	if (isfree == true){
-		pthread_cond_wait(& lleno, &semaf);
-	}
-	char character;
-	character = buffer[out];
-	out = (out+1);
-  ofstream write("encrypted.txt",ios::app);
+  pthread_mutex_lock(& semaf);
+  if (isfree == true){
+    pthread_cond_wait(& lleno, &semaf);
+  }
+  char character;
+  character = buffer[out];
+  out = (out+1);
+  ofstream write("un-encrypted.txt",ios::app);
   if(!write)
   {
     cerr<<"Fail to create encrypted.txt"<<endl;
@@ -355,20 +352,19 @@ void *WriteResult(void *threadID){
   }
   write<<character;
   isfree = true;
-	pthread_cond_broadcast(& vacio); 
- 	pthread_mutex_unlock(& semaf);   
+  pthread_cond_broadcast(& vacio); 
+  pthread_mutex_unlock(& semaf);   
 }
 
 void *code(void *threadID){
-	pthread_mutex_lock (& semaf);  
-	long ID;
-	ID = long(threadID);
-	if (isfree == false){
-  		pthread_cond_wait(& vacio, &semaf); 
-	}
-	int res = int(ID);
-	string str1 = decimalToHex(res);
-  cout<<endl<<ID<<"/"<<str1<<"|"<<endl;
+  pthread_mutex_lock (& semaf);  
+  long ID;
+  ID = long(threadID);
+  if (isfree == false){
+      pthread_cond_wait(& vacio, &semaf); 
+  }
+  int res = int(ID);
+  string str1 = decimalToHex(res);
   //Texto a encriptar y clave
   string plainText, key; 
 
@@ -410,7 +406,7 @@ void *code(void *threadID){
     1, 2, 2, 2, 
     2, 2, 2, 1 
   }; 
-  
+  buffer[in] = char(res-10);
   // key compression table
   int keyCompressionTable[48]= 
   { 14,17,11,24,1,5, 
@@ -442,21 +438,20 @@ void *code(void *threadID){
     
         // enviar la clave a la ultima posicion de los dos vectores
     roundKeysBin.push_back(RoundKey); 
-  }  
+  } 
+  reverse(roundKeysBin.begin(), roundKeysBin.end()); 
   string cipher= encrypt(plainText, roundKeysBin);
-  cout<<cipher;
   res = hexToDecimal(cipher.substr(0,2));
-  buffer[in] = char(res);
   in = (in+1);
   isfree = false;
   pthread_cond_broadcast(& lleno); 
-	pthread_mutex_unlock(& semaf); 
+  pthread_mutex_unlock(& semaf); 
 }
 
 int main(int argc, char const *argv[])
 {
   ofstream infile;
-  infile.open("encrypted.txt");
+  infile.open("un-encrypted.txt");
   infile.clear();
   int rc;
   pthread_t tid;//id
@@ -468,42 +463,47 @@ int main(int argc, char const *argv[])
   pthread_attr_t attr1;//atribute
   pthread_attr_init(&attr1);
   pthread_attr_setdetachstate(&attr1, PTHREAD_CREATE_JOINABLE);
-	char string[128];	
+  char string[128]; 
   in = out = 0;
-	pthread_mutex_init(&semaf, NULL); 
+  pthread_mutex_init(&semaf, NULL); 
   pthread_cond_init(&lleno, NULL); 
- 	pthread_cond_init(&vacio, NULL);
-	ifstream read("Test.txt",ios::in);
-	if(!read){
-		cerr<<"Fail to read Test.txt"<<endl;
-		exit(EXIT_FAILURE);
-	}
-	int counter = 0;
-	while (!read.eof()) {
-	    read >> string;
-	    int x = 0;
-	    while(string[x] != '\0'){
-	    	int chain = int(string[x]);
-	    	rc = pthread_create(&tid, NULL, code, (void *)chain);//Create a thread for each number
+  pthread_cond_init(&vacio, NULL);
+  ifstream read("encrypted.txt",ios::app);
+  if(!read){
+    cerr<<"Fail to read Test.txt"<<endl;
+    exit(EXIT_FAILURE);
+  }
+  int counter = 0;
+  while (!read.eof()) {
+      read >> string;
+      int x = 0;
+      while(string[x] != '\0'){
+        int chain = int(string[x]);
+        rc = pthread_create(&tid, NULL, code, (void *)chain);//Create a thread for each number
         rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)counter);//Create a thread for each number
-       	if (rc) {
+        if (rc) {
            printf("ERROR; return code from pthread_create() is %d\n", rc);
            exit(-1);
         }    
-     	// Esperamos a que cada thread termine en orden
+      // Esperamos a que cada thread termine en orden
         rc = pthread_join(tid, NULL);    
         if (rc) {
-      	 	printf("ERROR; return code from pthread_join() is %d\n", rc);
-        	exit(-1);
+          printf("ERROR; return code from pthread_join() is %d\n", rc);
+          exit(-1);
         }
-	    	x++;
-	    	counter++;
-	    }
+        rc1 = pthread_join(tid1, NULL);    
+        if (rc1) {
+          printf("ERROR; return code from pthread_join() is %d\n", rc1);
+          exit(-1);
+        }
+        x++;
+        counter++;
+      }
       rc = pthread_create(&tid, NULL, code, (void *)int(' '));//Create a thread for each number
       rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&counter);//Create a thread for each number
       counter++;
-	}
+  }
   printf("The file is encrypted check encrypted.txt");
-	read.close();
-	exit(0);
+  read.close();
+  exit(0);
 }
