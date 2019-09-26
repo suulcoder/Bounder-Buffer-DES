@@ -503,7 +503,7 @@ int main(int argc, char const *argv[])
       rc1 = pthread_create(&tid1, NULL, WriteResult, (void *)&counter);//Create a thread for each number
       counter++;
   }
-  printf("The file is encrypted check encrypted.txt");
+  printf("The file is un-encrypted check encrypted.txt");
   read.close();
   exit(0);
 }
